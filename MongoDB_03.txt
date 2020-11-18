@@ -1,0 +1,89 @@
+db.position.insert({"_id" : "m12901", "loc" : { "type" : "Point", "coordinetes" : [127.126178,37.5140978] }, 
+"pos_name" : [ "add_name=올림픽 수영장", "add_type=Public Sport"] } )
+
+db.position.insert({"_id" : "m12902", "loc" : { "type" : "Point", "coordinetes" : [127.1224733, 37.5239739] }, 
+"pos_name" : [ "add_name=카페", "add_type=Public Sport"] } )
+
+db.position.find({ "loc" : {$geoWithin : 
+{$geometry : 
+{ "type" : "Polygon", 
+"coordinates" : [[[ 127.1261076, 37.5191452], [ 127.120412, 37.5239739], [ 127.1269535, 37.5239739], 
+[ 127.1269535, 37.5231093], [ 127.1290333, 37.5179105], [ 127.1239271, 37.5116750], [ 127.1261076, 37.5191452]]]
+} } } } ) 
+{ "_id" : "m12902", "loc" : { "type" : "Point", "coordinates" : [127.1224733, 37.5239739 ] }, 
+"pos_name" : ["add_name=카페", "add_type=Public Sport" ]}
+
+// 유저 생성
+db.createUser( { user : "system", pwd : "manager", roles : ["userAdminAnyDatabase", "dbAdminAnyDatabase",
+"readWriteAnyDatabase" ] } )
+
+db.createUser({ user: "scott", pwd : "tiger", roles : [ "dbAdmin", "readWrite" ] } )
+db.auth( {user : "scott", pwd: "tiger" })
+db.changeUserPassword("scott", "ttt")
+
+db.system.users.find()
+// mongoDB구동시 -auth 파라미터를 이용
+
+
+// mongoDB join
+db.ord.drop()
+
+db.ord.insert(
+{ord_id : "2012-09-012345", 
+customer_name : "Woman &Sports",
+emp_name : "Magee",
+total : "601100", 
+payment_type : "Credit", 
+oder_filled : "Y" } )
+db.ord.find()
+
+db.ord.update(
+{ord_id : "2012-09-012345" },
+{$set : { item_id : [ {item_no : "1" ,
+product_name : "Bunny Boots",
+item_price : "135",
+qty : "500",
+price : "67000"},
+{item_no : "2",
+product_name : "Pro Ski Boots",
+item_price : "380",
+qty : "400",
+price : "152000"} 
+] } } )
+
+db.ord.drop()
+db.ord.insert(
+{ ord_id : "2012-09-012345",
+customer_name : "Woman & Sports",
+emp_name : "Magee",
+total : "601100",
+payment_type : "Credit",
+order_filled : "Y" } )
+
+o = db.ord.findOne({"ord_id" : "2012-09-012345"})
+
+db.ord_detail.insert(
+{ord_id : "2012-09-012345", 
+item_id : [ {item_id : "1",
+product_name : "Bunny Boots",
+item_price : "135",
+qty : "500",
+price : "67000"},
+{item_id : "2",
+product_name : "Pro Ski Boots",
+item_price : "380",
+qty : "400",
+price : "152000"}
+], ordid_id : ObjectId("5f865d683c9fc5b9d85b370a")})
+
+db.ord_detail.findOne({ordid_id : o._id})
+
+db.category.insert({"cname" : "Note Book", "pname1" : "Asus EP121 M50" })
+db.category.insert({"cname" : "Tablet", "pname1" : "Asus EP121 M50", "pname2" : "iPad3" })
+db.category.insert({"cname" : "SlatePC", "pname1" : "Asus EP121 M50","pname2" : "Samsung eSalte 7" 
+
+
+db.car.insertMany( [ { engine : "A", frame : "AX_1", tire : "R16", car_type : "TAXI", lamp : 1, gas_tank : 1 },
+{ engine : "B", frame : "AX_3", tire : "R18", car_type : "BUS", auto_door : 2 }, 
+{ engine : "A", frame : "AX_2", tire : "R18", car_type : "TAXI", lamp : 2, gas_tank : 2 } 
+] )
