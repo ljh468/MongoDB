@@ -1,0 +1,16 @@
+mongod --dbpath c:\mongodb\disk1 --port 10001 --bind_ip localhost --replSet rptmongo --oplogSize 10
+mongod --dbpath c:\mongodb\disk2 --port 10002 --bind_ip localhost --replSet rptmongo --oplogSize 10
+mongod --dbpath c:\mongodb\arbit --port 10003 --bind_ip localhost --replSet rptmongo --oplogSize 10
+
+mongo localhost:10001/admin
+
+
+# 데이터는 설계가 중요함
+# 쿼리로 인하여 성능이 저하 되는경우 원인분석과 조치를 문장튜닝이라고 함
+# 샤딩, 리프리카셋 등 아키텍처 문제에대한 원인분석과 해결을 아키텍처 튜닝이라고 함
+# 메모리 매핑 기술을 이용한 데이터 처리기법을 활용하여 빅데이터 처리에 빠른 성능을 보장함
+
+------------- 디자인 튜닝 -------------
+
+------------- 문장 튜닝 -------------
+

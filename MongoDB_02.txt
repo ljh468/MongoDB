@@ -1,0 +1,17 @@
+db.employees.dropIndex({empno:1})
+
+db.employees.find({empno: 7369})
+
+db.employees.insert({empno: 7369, ename: "ADAM"})
+
+db.position.createIndex({loc : "2dsphere"})
+db.position.insert({"_id" : "m239092", "data_type" : NumberLong(1), "loc" : { "type" : "Point", "coordinates" : [127.1058431, 37.5164113] } ,"pos_name" : [ "name=잠실역 2호선", "trans_type=지하철"] } )
+db.position.insert({"_id" : "m239091", "data_type" : NumberLong(1), "loc" : { "type" : "Point", "coordinates" : [127.0980748, 37.5301218] } ,"pos_name" : [ "name=동서울 터미널", "trans_type=버스터미널"] } )
+db.position.insert({"_id" : "m239090", "data_type" : NumberLong(1), "loc" : { "type" : "Point", "coordinates" : [127.0952154, 37.5398467] } ,"pos_name" : [ "name=강변역 2호선", "trans_type=지하철"] } )
+db.position.insert({"_id" : "m239098", "data_type" : NumberLong(1), "loc" : { "type" : "Point", "coordinates" : [127.0742172, 37.5419541] } ,"pos_name" : [ "name=건국대학역 2호선", "trans_type=지하철"] } )
+
+db.position.insert({"_id" : "m239093", "data_type" : NumberLong(1),"loc" : {"type" : "Point", "coordinates" : [127.0846600, 37.5120906]},"pos_name" : ["name=신천역 2호선", "trans_type=지하철" ]})
+db.position.insert({"_id" : "m239094", "data_type" : NumberLong(1),"loc" : {"type" : "Point", "coordinates" : [127.0740075, 37.5133497]},"pos_name" : ["name=종합운동장역 2호선", "trans_type=지하철" ]})
+db.position.insert({"_id" : "m239095", "data_type" : NumberLong(1),"loc" : {"type" : "Point", "coordinates" : [127.0847829, 37.5105344]},"pos_name" : ["name=삼성역 2호선", "trans_type=지하철" ]})
+
+db.position.createIndex({loc: "2dsphere"})
