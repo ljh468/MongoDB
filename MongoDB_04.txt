@@ -49,4 +49,17 @@ db.employees.createIndex({empno : 1}, {unique : true})
 db.employees.find({empno : 7369})
 # 동일한 사원번호 입력시 에러 발생
 db.employees.insert({empno : 7369, ename : "ADAM"})
-
+# 유니크 인덱스 삭제
+db.employees.dropIndex({empno : 1})
+db.employees.insert({empno : 7369, ename : "ADAM"})
+db.employees.find({empno : 7369})
+# Sparse 인덱스
+# 검색대상 필드의 값이 전체 컬렉션에서 차지하는 밀도가 낮은 경우
+db.movie.createIndex{
+{제목 : 1},
+{sparse : true, unique : true} )
+db.employees.dropIndex({comm : 1})
+# comm 필드의 값이 존재하는 Document들만으로 인덱스가 생성됨
+db.employees.createIndex({comm : 1}, {sparse : true})
+db.employees.find().sort({comm : -1})
+db.employees.find().sort({comm : -1})
