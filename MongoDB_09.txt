@@ -1,8 +1,31 @@
+﻿cd /mongodb
+mkdir disk1
+mkdir disk2
+mkdir arbit
 mongod --dbpath c:\mongodb\disk1 --port 10001 --bind_ip localhost --replSet rptmongo --oplogSize 10
 mongod --dbpath c:\mongodb\disk2 --port 10002 --bind_ip localhost --replSet rptmongo --oplogSize 10
 mongod --dbpath c:\mongodb\arbit --port 10003 --bind_ip localhost --replSet rptmongo --oplogSize 10
 
 mongo localhost:10001/admin
+
+db.runCommand({"replSetInitiate" : {"_id":"rptmongo","members":
+[ {"_id":1, "host":"localhost:10001"},
+{"_id":2,"host":"localhost:10002"},
+{"_id":3,"host":"localhost:10003", arbiterOnly:true} ] }})
+
+
+cd /mongodb/bin
+mongo localhost:10001/admin
+# Replica Sets 환경정보
+db.printReplicationInfo()
+db.shutdownServer()
+
+mongo localhost:10002/admin
+-> 10001번이 죽었기 때문에 10002가 primary 가 됨
+
+
+
+
 
 
 # 데이터는 설계가 중요함

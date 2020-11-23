@@ -62,4 +62,40 @@ db.employees.dropIndex({comm : 1})
 # comm 필드의 값이 존재하는 Document들만으로 인덱스가 생성됨
 db.employees.createIndex({comm : 1}, {sparse : true})
 db.employees.find().sort({comm : -1})
-db.employees.find().sort({comm : -1})
+
+# 부분 인덱스
+# 일부 Document에 대해서만 인덱스키를 저장하는 인덱스
+db.movie.createIndex( {제목 : 1}, { partialFilterExpression : { 제목 : "무제"} }
+
+# Background 인덱스
+# 시스템의 자원에 맞춰 인덱스를 생성해줌
+db.employees.createIndex({ hiredate :1 }, {background : true})
+db.employees.find({hiredate : "20-02-1981"})
+
+# Covered 인덱스
+# 조건에 만족하는 대상 필드만으로 Covered 인덱스를 생성하고 그인덱스만을 검색하여 조회
+db.employees.createIndex({deptno : 1, ename : 1})
+db.employees.find({deptno :10, ename : "CLARK"}, {_id : 0, ename : 1})
+
+# GeoSpatial 인덱스
+# 좌표로 구성되는 2차원 구조로 하나의 Collection에 하나의 2D Index를 생성할 수 있음
+# 다양한 위치정보를 검색하는 경우 GeoSpatial 인덱스를 사용
+for(var i = 0; i< 100; i++) db.spatial.insert({pos : [ i % 10, Math.floor(i/10)]})
+db.spatial.createIndex({pos : "2d"})
+# 5, 5에가 가장 가까운 좌표 5개 뽑기
+db.spatial.find({pos : {$near : [5, 5] } } ) .limit(5)
+
+# center 비교 연산자 ( 해당좌표기준 가장 가까운 원형 좌표를 검색 )
+# center[ [x, y] , 반지름 ]
+db.spatial.find({ pos : {$within : {$center : [ [5, 5], 2] }}}, {_id : 0})
+
+# box 비교 연산자( 해당좌표기준 가장 가까운 Box형 좌표를 검색 )
+db.spatial.find({ pos : {$within : {$box : [ [ 5, 5], [6, 6] ] }}}, {_id : 0})
+
+# polygon 비교 연산자 ( 해당좌표기준 가장 가까운 다면형 좌표를 검색 )
+db.spatial.find({ pos : {$within : {$polygon : [ [3, 3], [5, 7], [7, 4] ] }}}, {_id : 0})
+
+
+
+
+

@@ -1,0 +1,109 @@
+# mongoDB 백업 및 복구
+
+db.things.insert({ empno:7369, ename : "SMITH", job : "CLERK", "hiredate : "17-12-1980", sal : 800, deptno : 20 })
+db.things.insert({ empno:7499, ename : "ALLEN", job : "SALESMAN", "hiredate : "20-02-1981", sal : 1600, comm : 300, deptno : 30 })
+db.things.insert({ empno:7521, ename : "WARD", job : "SALESMAN", "hiredate : "22-02-1981", sal : 1250, comm : 500, deptno : 30 })
+db.things.insert({ empno:7566, ename : "JONES", job : "MANAGER", "hiredate : "02-04-1981", sal : 2975, deptno : 20 })
+db.things.insert({ empno:7654, ename : "MARTIN", job : "SALESMAN", "hiredate : "28-09-1981", sal : 1250, comm : 1400, deptno : 30 })
+db.things.insert({ empno:7698, ename : "BLAKE", job : "MANAGER", "hiredate : "01-05-1981", sal : 2850, deptno : 30 })
+db.things.insert({ empno:7782, ename : "CLAKE", job : "MANAGER", "hiredate : "09-06-1981", sal : 2450, deptno : 10 })
+db.things.insert({ empno:7788, ename : "SCOTT", job : "ANALYST", "hiredate : "13-06-1987", sal : 3000, deptno : 20 })
+db.things.insert({ empno:7839, ename : "PRESIENT", job : "CEO", "hiredate : "17-11-1981", sal : 5000, deptno : 10 })
+db.things.insert({ empno:7844, ename : "TURNER", job : "SALESMAN", "hiredate : "08-09-1981", sal : 1500, deptno : 30 })
+db.things.insert({ empno:7876, ename : "ADAMS", job : "CLERK", "hiredate : "13-06-1987", sal : 1100, deptno : 20 })
+db.things.insert({ empno:7900, ename : "JAMES", job : "CLERK", "hiredate : "03-12-1981", sal : 950, deptno : 30 })
+db.things.insert({ empno:7902, ename : "FORD", job : "ANALYST", "hiredate : "03-12-1981", sal : 3000, deptno : 20 })
+db.things.insert({ empno:7934, ename : "CLERK", job : "CLERK", "hiredate : "23-01-1982", sal : 1300, deptno : 10 })
+
+cd /mongodb/bin
+mongodum --db test
+cd dump
+dir
+cd test
+dir
+
+cd mongodb/bin
+mkdir dump1
+
+# 특정 컬렉션 백업
+mongodump --db test --collection employees --out c:\mongodb\bin\dump1
+mkdir dump2
+
+# DB 전체 백업
+mongodump --out c:\mongodb\bin\dump2
+use test
+show collections
+db.things.drop()
+show collections
+
+# 백업 데이터 전체를 복구함
+mongorestore
+show collections
+
+# 복구시 object 상태를 체크, 동일한경우 이전 저장된 자료는 삭제후 복구함
+mongorestore --objcheck --drop
+mongorestore --db test c:\mongodb\bin\dump\test
+
+# 컬렉션 단위로 복구하는 방법으로 백업 파일이 저장되어 있는 경로명을 지정해 주어야함 
+mongorestore --db test --collection things c:\mongodb\bin\dump\test\things.bson
+bsondump things.bson
+
+bsondump --type debug things.bson
+
+cd mongodb/bin
+mongoexport -d test -c things -o things.csv --csv -f empno,ename,job,hiredate,sal,deptno
+type things.csv
+
+use test
+show collections
+mongoimport -d test -c employees --type csv --file mongoimport.csv --headerline
+mongo
+use test
+show collections
+
+db.employees.count()
+db.employees.drop()
+
+mongoimport -d test -c employees --type tsv --file mongoimport.tsv --headerline
+mongo
+
+use test
+show collections
+db.employees.count()
+
+mongostat --rowcount 50
+
+# mongoTop 유틸리티
+mongotop 5
+mongod --dbpath c:\mongodb\test --logpath c:\mongodb\test\log201912.txt
+use admin
+db.shutdownServer()
+exit
+
+cd c:\mongodb\test
+type log201912.txt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
