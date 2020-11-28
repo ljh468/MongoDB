@@ -1,6 +1,8 @@
-﻿cd mongodb/bin
+﻿## 인덱스 생성과 관리
+cd mongodb/bin
 mongod --dbpath c:\mongodb\test
 mongo
+
 # 빠른 데이터검색을 수행하기 위함
 # 인덱스를 생성하고 관리하는 방법
 # Employees 컬렉션에 생성된 모든 인덱스를 출력
@@ -15,6 +17,7 @@ db.employees.createIndex({_id : 1})
 db.employees.createIndex({comm : 1})
 db.employees.reIndex()
 
+#####################################################
 ## MongoDB에서 인덱스의 주요특징
 # MongoDB는 대소문자를 엄격히 구분함
 # Collection의 충분한 EXTENT 크기를 설정해야 하는 것처럼 충분한 인덱스 EXTENT크기를 설정해야함
@@ -27,15 +30,19 @@ db.employees.createIndex({deptno : 1})
 db.employees.find({deptno : 10})
 db.employees.find({deptno : 10}).explain()
 
+#####################################################
 # 다중키 인덱스
 # 배열 값을 인덱싱
 db.movie.createIndex({"리뷰.제목" : 1})
+
 # 텍스트 인덱스
 # $text 연산자로 쿼리가 가능
 db.movie.createIndex({제목 : "text"})
+
 # 해시 인덱스
 # 값 일치가 중요한 필드를 인덱싱
 db.movie.createIndex({배급사 : "hashed"})
+
 # 인덱스 이름 정하기
 # mongo는 알아서 이름을 정하지만 이름을 정할수 있음
 db.movie.createIndex({배급사 : "hashed"}, {name : "배급사 해시 인덱스"})
@@ -46,7 +53,6 @@ db.employees.createIndex({empno : 1}, {unique : true})
 # 중복된 값이 저장되어 있는필드에 생성하는 Non-Unique 인덱스
 db.employees.createIndex({ename : 1})
 db.employees.dropIndex({empno : 1})
-
 # 인덱스 재생성 (Unique 인덱스 재생성)
 db.employees.createIndex({empno : 1}, {unique : true}) 
 db.employees.find({empno : 7369})
