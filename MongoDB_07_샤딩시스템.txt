@@ -1,15 +1,73 @@
+## 샤딩 시스템
+# 빅데이터 환경은 초당 몇 만건 이상 되는 수많은 데이터를 빠른 시간 내에 수집하고 저장해야함
+# 분산, 집계하여 사용자가 원하는 통계정보로 가공할 수 있어야함
+# 이러한 시스템을 구축하기 위해 데이터의 분산 저장 및 처리기술이 Sharding  시스템이라고함
+
+## 샤딩의 목적
+## 데이터의 분산 저장
+# 초당 발생하는 빅데이터를 디스크에 저장할 때 발생하는 Write Scaling문제는 성능저하 현상을 유발
+# 하나의 서버가 아니라 여러대의 서버를 통해 분산 처리 했을 때 가장 이상적으로 작동할 수 있음
+
+## 빠른 성능
+# 분산처리는 여러개의 프로세스가 여러개의 CPU로 동시에 작업을 수행했을때 이상적임
+# 샤딩 시스템은 분산처리 기술을 통한 빠른 성능을 보장
+
+## 데이터의 백업과 복구 전략의 일환
+# 샤딩의 대표적인 기능은 데이터의 분산 저장을 통한 성능향상임
+# 하나의 서버에 저장관리했을때 장애가 발생한다면, 유실되는 데이터가 많아짐
+# 여러개의 서버에 분산저장하기 때문에 위험요소로부터 안전하게 데이터를 저장, 관리
 
 ################################################################
-cd /mongodb\bin
+## Shard Cluster 구성
+# 샤딩시스템은 3대이상의 샤드 서버로 구축할것을 권장
+# 싱글노드에 요구되는 메모리영역보다 최소 20~30% 이상의 추가메모리 영역이 요구됨
+# 샤드 시스템을 구축할 때 요구되는 Config 서버는 최소 3대이상 활성화할 것을 권장함
+# Config 서버는 샤드 시스템 구축과 관련된 메타 데이터를 저장 관리
+# 빠른 검색을 위한 인덱스 정보를 저장 관리 , 샤드 서버는 별도의 서버에 구축하는 것이 원칙임
+cd c:\mongodb
+mkdir shard1
+mkdir shard2
+mkdir shard3
+mkdir config1
+# Sharding 환경설정
+# c:\Windows\System32\drivers\etc 폴더에 hosts 파일에 "127.0.0.1 localhost" 추가
 
+# Node 1,2,3을 위한 Shard Server를 활성화함
+cd /mongodb\bin
 mongod --shardsvr --dbpath c:\mongodb\shard1 --port 40001 --bind_ip localhost
 mongod --shardsvr --dbpath c:\mongodb\shard2 --port 40002 --bind_ip localhost
 mongod --shardsvr --dbpath c:\mongodb\shard3 --port 40003 --bind_ip localhost
 
+################################################################
+## Config 서버
+# 별도의 윈도우 창에서 Node 4,5,6 의 Config Server를 활성화함
+# 백업 서버로 Config서버 2대를 추가로 설정함
+# 첫번째 서버에 장애가 발생하면 두번째, 세번째 Config 서버가 작동될것임
 mongod --configsvr --replSet rptconfig --dbpath c:\mongodb\config1 --port 50001 --bind_ip localhost
 mongod --configsvr --replSet rptconfig --dbpath c:\mongodb\config2 --port 50002 --bind_ip localhost
 mongod --configsvr --replSet rptconfig --dbpath c:\mongodb\config3 --port 50003 --bind_ip localhost
 
+## Config 서버의 주요 특징
+# Config 서버는 샤딩 시스템의 필수 구조 중에 하나이고 최소 1개가 요구되며 예기치 못한 시스템 장애를 대비해 추가 로Config 서버의 설정이 필요
+# Config2, Config3 는 별도의 시스템또는 다른 샤드 서버쪽에 분산 배치해야함 
+# Config1에 저장된 MetaData는 Config2와 Config3에 동일하게 저장관리 됨
+# Config서버는 각 샤드서버에 어떤 데이터들이 어떻게 분산 저장되어있는지에 대한 MetaData가 저장되어있음
+# MongoS가 데이터를 쓰고/읽기 작업을 수행할때 Config 서버를 통해 수집함
+
+################################################################
+## MongoS 프로세스
+
+# MongoS 프로세스의 주요특징
+# 빅데이터를 샤드서버로 분배해 주는 프로세스
+# 하나 이상의 프로세스가 활성화 됨
+# Application server에서 실행 가능함
+# Config 서버로 부터 MetaData를 캐시함
+
+
+# 구축된 Config 서버중 하나의 서버에 접속하여 각 Config 서버를 Replica Sets로 클러스터링 함
+cd c:\mongo\bin
+mongo --host localhost --port 50001
+use admin
 rs.initiate( 
 {
  _id : "rptconfig", 
@@ -21,13 +79,15 @@ configsvr : true,
    ] 
    } )
 
+## 샤드 클러스터를 이용하기 위한  MongoS인스턴스를 활성화함
 mongos --configdb rptconfig/localhost:50001, localhost:50002,localhost:50003 --port 20000
+## MongoS프로세스에 접속하여 각 샤드 서버를 등록함
 mongo --host localhost --port 20000
-
 sh.addShard("localhost:40001")
 sh.addShard("localhost:40002")
 sh.addShard("localhost:40003")
 
+## Shard 시스템 테스트
 use test
 sh.enableSharding("test")
 db.employees.createIndex({empno:1})
