@@ -1,0 +1,140 @@
+## 논리적 구조 & 물리적 구조
+
+## MongoDB의 기본구조는 DBMS를 시작하면 3가지영역이 활성화됨
+
+## 프로세스 영역
+# 클라이언트 프로세스 : 접속시 활성화되는 프로세스
+# 서버 프로세스 : 시작, 종료시 사용되는 프로세스
+
+## 메모리 영역
+# Memory Cache 영역 : 전용메모리영역으로 데이터의 쓰기와 읽기 작업이 수행되는 메모리 영역
+# Journal 영역 : 읽기, 쓰기시 장애가 발생하는경우 데이터를 백업해두는 전용 메모리 영역
+# Resident(WorkingSet) : 실제 데이터가 처리되는 물리적 메모리 영역
+
+## 파일 영역
+# 데이터 파일 : 사용자가 입력한 데이터가 저장되는 실제 물리적공간
+# Journal 파일 : 백업되는 데이터는 디스크 상의 Journal 파일에 저장됨
+# Log파일 : 내부적으로 발생하는 로그 정보를 파일로 저장할 수 있음
+
+#####################################################
+## 물리적 구조 (데이터파일, 저널파일)
+# 데이터 파일이 생성될 경로를 지정하고 Journal기능이 작동될 수 있도록 환경설정
+mongod --dbpath c:\mongodb\test --journal
+show dbs
+exit
+cd c:\mongodb\test
+dir # 데이터파일
+cd journal
+dir # 저널 파일
+# -> Journal 파일의 기본크기는 1GB이며 최대크기에 도달하면 새로운 파일이 1GB단위로 추가됨
+
+#####################################################
+## 논리적 구조
+# 하나의 데이터베이스는 여러개의 Collection으로 구성
+# 하나의 Collection은 여러개의 Extent로 구성됨
+# 하나의 Extent는 여러개의 Data record(Document)로 구성됨
+# 가장 작은 논리적구조는 데이터레코드(Document)
+# Database -> Collection -> Extents -> Data Records(Document)
+
+db.createCollection("s_emp", { capped : true, size : 100000 } );
+# 컬렉션 크기는 createCollection에 의해 생성될때 결정되며 Extent 기본크기는 8K이며
+# insert, save 메소드에의해 컬렉션이 생성될때 기본크기는 4K
+use SALES
+db.createCollection("s_emp", { capped : true, size : 8192 } )
+db.s_emp.validata()
+
+#####################################################
+## 인스텐트와 데이터 레코드
+# MongoDB에서 Extent는 데이터가 저장되는 논리적 단위
+# 하나의 Extent에 얼마나 적절하게 데이터를 저장하는가는 성능을 좌우하는 요소임
+# 적절한 익스텐트 크기를 결정하기 위해서는 적절한 분석과 논리적 설계가 요구됨
+# 익스텐트를 너무 작게 설정하면 입력도중 새로운 익스텐트를 활성화 시키는 횟수가 빈번해질수 있음
+# 하나의 Data Record는 하나의 Document정보와 이전, 이후 Document가 저장되어 있는 주소정보를 함께 저장하고 있음
+# 인덱스는 Collection과 동일하게 여러개 Extent로 구성됨
+# 하나의 Extent는 여러개의 Index Records로 구성됨
+
+#####################################################
+## 메모리 구조
+# Mongo의 메모리영역은 크게 2가지영역
+# 첫번째는 Virtual Memory Area
+# 두번째는 Resident Area
+
+# Virtual Memory Area는 Mapped Cache Area, Virtual Area, Journal Area로 세분화됨
+# Mapped Cache Area : 데이터가 캐시될 메모리 영역
+# Virtual Area : 캐시영역이 부족할때 사용될 추가 캐시 영역
+# Journal Area : 사용자의 작업내용을 실시간으로 백업할 메모리 영역
+
+# Resident Are는 Working Set으로 표현되며 데이터를 처리하는 실제 메모리 영역임
+use admin
+db.serverStatus().mem
+
+## MongoDB의 메모리 영역
+bits : 현재시스템의 운영체제 정보
+resident : 현재 데이터에 대한 쓰기/읽기 작업이 수행중인 메모리 크기
+virtual : 가상 메모리 영역
+mapped : 사용된 메모리 매핑 영역
+journal : 백업 데이터가 저장되는 메모리 영역
+
+## 적정 메모리 요구사항
+# Mongo는 메모리 매핑 기법에 의해 작업을 수행, 충분한 메모리 공간이 확보되어야함
+# 메모리 공간의 크기는 활성화되는 데이터파일과 데이터파일의 개수와 크기 그리고 자주 참조되는 데이터 크기에 맞는 공간이 요구됨
+# 64Bit 시스템의 경우, 첫번째 데이터 파일의 크기는 64MB임
+# 별도의 가상메모리를 사용하지않기 때문에 약 2배이상의 여유 메모리 공간을 요구
+# Mongo의 실제 작업 메모리 영역을 Resident Area (Working Set)이라함
+# 서버에 의해 동적으로 할당되며 전체 시스템영역의 90~95%범위까지 공간을 할당 받게 됨
+# 데이터 파일의 크기가 2GB가 되는 경우에 RAM 메모리 크기는 약 10GB~12GB 정도 요구됨
+# 메모리가 주족하면 Page Fault가 발생하여 성능저하 현상이 발생함
+
+## 저널 파일
+# 예기치 못한 현상으로 사용자데이터 유실을 방지하기 위한 별도의 공간에 백업 데이터를 저장하는 파일
+# 기본크기는 1GB이며, 여러개의 Journal파일로 구성됨
+# 사용자가 입력, 수정, 삭제한 데이터는 데이터파일에 저장되기 전에 Journal파일에 먼저 저장됨
+# 장애 발생시 Journal파일의 백업데이터로 데이터 파일을 복구함
+# 기본적으로 100ms마다 100mb를 저장함
+# Journal모드가 요구되는 경우
+# Single Node : Data의 무결성 보장을 위해 반드시 필요
+# Replica Sets : 최소 1Node에 정의해야함
+# 각 데이터베이스의 데이터 파일과 분리된 물리적 디스크에 생성해야 좋은 성능을 기대할 수 있음
+
+#####################################################
+## Lock정책
+# Mongo는 관계형데이터베이스와 같이 데이터 공유를 통한 트랜잭션 기능을 제공하며 이것이 가능하려면 Lock기능이 필요함
+# Lock기능은 하나의 데이터를 여러 사용자들이 동시에 처리할때 발생하는 동시성을 효과적으로 처리하기 위한 기능
+# 만약, Lock기능이 제공되지 않는다면 데이터의 공유가 가능하지 않을 것임
+# V1.8 : Global Lock , V2.2 : Database Lock, V2.6 : Collection Level Lock
+# Lock 문제로 인한 성능 지연 문제 해소를 위해 PageFaultException 기능을 추가로 제공함
+
+# Global Lock & PageFault
+# 특정사용자가 Updaate하면 Global Lock이 발생하는데, 이때 다른 사용자에 의해 읽기 작업이 발생함
+# PageFault를 유발시켰다면 Fault Handler에 의해 Mapped Cache Area에 로드 되지 못함
+# 이런 문제를 개선하기 위해 Global Lock을 포기하는것을 PageFaultException이라고 함
+## PageFaultException이 발생하는 경우
+# _id 필드에 의한 update가 발생하는경우
+# 데이터 Remove가 실행될 때
+# Long Cursor lteration이 수행 되는 경우
+
+#####################################################
+## Grid File System 기능
+# 대용량의 파일을 데이터베이스 내에 Upload하거나 Upload된 파일을 OS상에 다운로드 해야하는 경우 적용
+# 최대 16MB 처리가 가능하며 256Kbyte의 Chunk Size가 적용됨
+# 각 Chunk는 하나의 컬렉션에 여러개의 분리된 도큐먼트로 저장됨
+
+# Grid File System 실습을 위해 BIG_EMP.TXT를 BIN경로에 복사함
+# BIG_EMP.TXT 파일을 업로드함
+mongo
+show collections
+exit
+mongofiles get big_emp.TXT
+mongofiles list
+mongofiles put big_emp.TXT # Put옵션을 사용하여 OS상의 파일을 DB내로 Upload함
+mongofiles list
+mongo
+show collections # upload된 Collection을 확인
+db.fs.files.find()
+exit
+dir big_emp.TXT
+del big_emp.TXT
+mongofiles list big_emp.TXT
+mongofiles get big_emp.TXT # 다시 OS상에 파일을 Download함
+dir big_emp.TXT
+
