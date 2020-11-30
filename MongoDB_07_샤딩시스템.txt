@@ -68,6 +68,7 @@ mongod --configsvr --replSet rptconfig --dbpath c:\mongodb\config3 --port 50003 
 cd c:\mongo\bin
 mongo --host localhost --port 50001
 use admin
+# Config1, Config2, Config3 클러스터링
 rs.initiate( 
 {
  _id : "rptconfig", 
@@ -89,53 +90,30 @@ sh.addShard("localhost:40003")
 
 ## Shard 시스템 테스트
 use test
+# Test 데이터베이스에 샤딩을 활성화함
 sh.enableSharding("test")
+# 샤드키의 기준이 되는 인덱스 생성
 db.employees.createIndex({empno:1})
+# Collection에 샤딩을 활성화함
 sh.shardCollection("test.employees", {empno: "hashed"})
+
 for(var a=1; a<= 100000; a++) db.employees.insert({empno:a, name:"test"})
 
-cd /mongodb\bin
+## 샤드서버, Config 서버, MongoS프로세스에 대한 환경설정 작업이 완료되었으면 정상적으로 설정이 완료되었는지 확인
+db.getSiblingDB("admin").runCommand( { listShards : 1 } )
 
-mongod --shardsvr --dbpath c:\mongodb\shard1 --port 40001 --bind_ip localhost
-mongod --shardsvr --dbpath c:\mongodb\shard2 --port 40002 --bind_ip localhost
-mongod --shardsvr --dbpath c:\mongodb\shard3 --port 40003 --bind_ip localhost
-
-mongod --configsvr --replSet rptconfig --dbpath c:\mongodb\config1 --port 50001 --bind_ip localhost
-mongod --configsvr --replSet rptconfig --dbpath c:\mongodb\config2 --port 50002 --bind_ip localhost
-mongod --configsvr --replSet rptconfig --dbpath c:\mongodb\config3 --port 50003 --bind_ip localhost
-
-rs.initiate( 
-{
- _id : "rptconfig", 
-configsvr : true,
- members : [ 
-	{_id: 0, host : "localhost:50001"},
-	{_id: 1, host : "localhost:50002"}, 
-	{_id: 2, host : "localhost:50003"}
-	] 
-	} )
-
-mongos --configdb rptconfig/localhost:50001, localhost:50002,localhost:50003 --port 20000
-mongo --host localhost --port 20000
-
-sh.addShard("localhost:40001")
-sh.addShard("localhost:40002")
-sh.addShard("localhost:40003")
-
-use test
-sh.enableSharding("test")
-db.employees.createIndex({empno:1})
-sh.shardCollection("test.employees", {empno: "hashed"})
-for(var a=1; a<= 100000; a++) db.employees.insert({empno:a, name:"test"})
-
+# 1000000건의 데이터가 입력되고 중간에 1번째 샤드서버부터 3번째 샤드서버에 데이터가 어떻게 분산 입력되었는지 확인
 mongo --host localhost --port 40001
-mongo --host localhost --port 40002
-mongo --host localhost --port 40003
-
+use test
 db.employees.find().count()
+# -> 1번째 샤드서버에는 333952건이 저장됨
 
-sh.status()
+mongo --host localhost --port 40002
+use test
+db.employees.find().count()
+# -> 2번째 샤드서버에는 332230건이 저장됨
 
-
-mkdir shard4
-mongod --shardsvr --dbpath c:\mongodb\shard4 --port 40004 --bind_ip localhost
+mongo --host localhost --port 40003
+use test
+db.employees.find().count()
+# -> 3번째 샤드서버에는 333818건이 저장됨
