@@ -1,5 +1,39 @@
 # mongoDB 백업 및 복구
 
+## 백업 유형
+
+## ShutDown & File Backup
+# 빅데이터를 저장하고 있는 데이터파일을 물리적으로 복사하는 방법(copy, cp)
+# 파일을 복사하는동안 데이터베이스를 서비스할 수없는 치명적인 문제점이 있음
+
+## FsynkLock/FsyncUnlock
+# 데이터베이스를 종료하지 않고 온라인상태에서 데이터파일을 복사하는 방법
+# 백업하는 도중에 사용자가 데이터를 변경하게 되면 백업파일의 무결성에 문제가 발생할 수도 있음
+# FsyncLock 명령어를 이용하여 변경작업이 발생하지않도록 잠금설정을 해야함
+# 백업작업후 FsynUmlock으로 잠금해제를 해야함
+
+## Snapshot 백업
+## MongoDump
+## MongoExport
+## Master/Slave $ Replica 백업
+
+################################################################
+## 복구 유형
+
+## ShutDown & File Backup
+## Copy Database/Clone Database
+## MongoRestore
+## MongoImport
+## ReplicaSets Recovery
+
+################################################################
+## MongoDump & MongoRestore
+# Dump는 백업에 사용, Restore는 복구할때 사용
+# MongoDump는 3가지 백업을 제공함
+# 전체백업, DB별 백업, Collection별 백업
+# MongoRestore도 동일한 3가지 방법으로 복구 할수 있음
+
+# Tings Collection 생성
 db.things.insert({ empno:7369, ename : "SMITH", job : "CLERK", "hiredate : "17-12-1980", sal : 800, deptno : 20 })
 db.things.insert({ empno:7499, ename : "ALLEN", job : "SALESMAN", "hiredate : "20-02-1981", sal : 1600, comm : 300, deptno : 30 })
 db.things.insert({ empno:7521, ename : "WARD", job : "SALESMAN", "hiredate : "22-02-1981", sal : 1250, comm : 500, deptno : 30 })
@@ -15,6 +49,7 @@ db.things.insert({ empno:7900, ename : "JAMES", job : "CLERK", "hiredate : "03-1
 db.things.insert({ empno:7902, ename : "FORD", job : "ANALYST", "hiredate : "03-12-1981", sal : 3000, deptno : 20 })
 db.things.insert({ empno:7934, ename : "CLERK", job : "CLERK", "hiredate : "23-01-1982", sal : 1300, deptno : 10 })
 
+# Dump 디렉토리 정보를 검색해봄
 cd /mongodb/bin
 mongodum --db test
 cd dump
@@ -22,40 +57,45 @@ dir
 cd test
 dir
 
+# 특정 Collection 백업
 cd mongodb/bin
 mkdir dump1
-
-# 특정 컬렉션 백업
 mongodump --db test --collection employees --out c:\mongodb\bin\dump1
-mkdir dump2
 
-# DB 전체 백업
+# DB전체 백업
+mkdir dump2
 mongodump --out c:\mongodb\bin\dump2
+
+# 백업된 파일을 데이터베이스내로 복구함
 use test
 show collections
 db.things.drop()
 show collections
-
 # 백업 데이터 전체를 복구함
 mongorestore
 show collections
 
 # 복구시 object 상태를 체크, 동일한경우 이전 저장된 자료는 삭제후 복구함
 mongorestore --objcheck --drop
+# DB단위로 복구하는 방법으로 백업파일이 저장되어 있는 경로명을 지정해 주어야함
 mongorestore --db test c:\mongodb\bin\dump\test
-
 # 컬렉션 단위로 복구하는 방법으로 백업 파일이 저장되어 있는 경로명을 지정해 주어야함 
 mongorestore --db test --collection things c:\mongodb\bin\dump\test\things.bson
+# Dump에 의해 생성된 백업파일(bson파일)에 어떤 데이터가 저장되어 있는지 분석할 수 있는 BsonDump 유틸리티를 실행함
 bsondump things.bson
 
+# BsonDump에 debug옵션절을 부여하면 해당 컬렉션이 저장되어 있는 각 Document별 각 Field의 데이터타입과 데이터길이를 분석한 결과를 출력
 bsondump --type debug things.bson
-
+# MongoDB를 구축하다보면 마이그레이션해야하는경우가 발생( 타 데이터베이스와 Mongo간의 이동 )
+# MongoExport는 데이터를 운영체제 상의 파일형태로 주고 받을수 있는 유틸리티임
 cd mongodb/bin
 mongoexport -d test -c things -o things.csv --csv -f empno,ename,job,hiredate,sal,deptno
 type things.csv
 
+# MongoImport 유틸리티를 이용하면, JSON, CSV, TSV타입의 데이터를 업로더 할 수 있음
 use test
 show collections
+# CSV파일의 데이터를 업로드 하는 방법
 mongoimport -d test -c employees --type csv --file mongoimport.csv --headerline
 mongo
 use test
@@ -64,46 +104,29 @@ show collections
 db.employees.count()
 db.employees.drop()
 
+# TSV파일의 데이터를 업로드 하는 방법
 mongoimport -d test -c employees --type tsv --file mongoimport.tsv --headerline
 mongo
-
 use test
 show collections
 db.employees.count()
 
+# MongoStat 유틸리티
+# Mongo에서 발생하는 다양한 작업 상태정보와 메모리 상태및 기타 시스템정보를 출력해주는 유틸리티
 mongostat --rowcount 50
 
-# mongoTop 유틸리티
+# MongoTop 유틸리티
+# MongoDB내의 모든 Collection에 대한 Read/Write현황에 대한 상태정보를 제공하는 유틸리티
 mongotop 5
+
+# MongoDB Log 수집 및 분석
+# Mongod를 최초실행할 때 -logpath옵션절을 부여하면 인스턴스에서 발생하는 다양한 로그정보를 파일로 저장할 수 있고 참조할 수 있음
+# Mongod가 실행된 화면에서 실시간으로 로그정보를 볼수는 없지만 로그정보를 파일로 저장해 둘 수 있는 장점이 있음
 mongod --dbpath c:\mongodb\test --logpath c:\mongodb\test\log201912.txt
 use admin
 db.shutdownServer()
 exit
-
+# 인스턴스를 종료한후 해당 경로에서 파일을 확인함
 cd c:\mongodb\test
 type log201912.txt
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
