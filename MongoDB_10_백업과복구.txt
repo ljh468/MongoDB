@@ -129,4 +129,3 @@ exit
 # 인스턴스를 종료한후 해당 경로에서 파일을 확인함
 cd c:\mongodb\test
 type log201912.txt
-
